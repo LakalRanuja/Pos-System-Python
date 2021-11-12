@@ -7,8 +7,10 @@ __db_location__ = "db"
 __session_file__ = f"{__db_location__}/session.db"
 __item_folder__ = f"{__db_location__}/item"
 __item__last_id__ = f"{__db_location__}/item_id.db"
-__customer_folder__=f"{__db_location__}/customer"
-__customer_last_id__=f"{__db_location__}/customer_id.db"
+__customer_folder__ = f"{__db_location__}/customer"
+__customer_last_id__ = f"{__db_location__}/customer_id.db"
+__order_folder__ = f"{__db_location__}/order"
+__order_last_id__ = f"{__db_location__}/order_id.db"
 
 
 def init(arguments):
@@ -16,6 +18,7 @@ def init(arguments):
     def db():
         os.makedirs(__item_folder__)
         os.makedirs(__customer_folder__)
+        os.makedirs(__order_folder__)
 
     section = arguments[0]
     if section == "init":
@@ -40,6 +43,7 @@ def login(username):
     f.write(username)
     f.close()
 
+
 class Customer:
     def __init__(self):
         if os.path.exists(__customer_last_id__):
@@ -51,14 +55,14 @@ class Customer:
     def saveCustomer(self):
         cusID = self.last_id+1
 
-        # Save Customer database
+        # Save Customer in database
         _data_ = {
             "cusId": cusID,
             "cusName": self.cusName,
-            "cusAddress":self.cusAddress,
-            "cusContact":self.cusContact
+            "cusAddress": self.cusAddress,
+            "cusContact": self.cusContact
         }
-        with open(f"{__customer_folder__}/{cusID}.db","w") as customer_file:
+        with open(f"{__customer_folder__}/{cusID}.db", "w") as customer_file:
             json.dump(_data_, customer_file)
 
         # Save next id
@@ -70,7 +74,7 @@ class Customer:
         Customer.__get_customer_by_path(self, f"{__customer_folder__}/{id}.db")
 
     def __get_customer_by_path(customer, path):
-        with open(path,"r") as customer_file:
+        with open(path, "r") as customer_file:
             _data_ = json.load(customer_file)
             customer.cusId = _data_["cusId"]
             customer.cusName = _data_["cusName"]
@@ -93,6 +97,7 @@ class Customer:
     def __str__(self):
         return f"cusId:{self:cusId},cusName:{self.cusName},cusAddress:{self.cusAddress},cusContact:{self.cusContact}"
 
+
 def customer_create(cusName, cusAddress, cusContact):
     customer = Customer()
     customer.cusName = cusName
@@ -100,15 +105,88 @@ def customer_create(cusName, cusAddress, cusContact):
     customer.cusContact = cusContact
     customer.saveCustomer()
 
+
 def customer_all():
     customer = Customer()
     customers = customer.all()
     pprint(customers)
 
+
 def customer_view(id):
     customer = Customer()
     customer.find(id)
-    print(customer.cusId, customer.cusName, customer.cusAddress, customer.cusContact)
+    print(customer.cusId, customer.cusName,
+          customer.cusAddress, customer.cusContact)
+
+
+class Order:
+    def __init__(self):
+        if os.path.exists(__order_last_id__):
+            with open(__order_last_id__, "r") as last_id_o:
+                self.last_id = int(last_id_o.readline())
+        else:
+            self.last_id = 0
+
+    def saveOrder(self):
+        oid = self.last_id+1
+
+        # Save Order in Database
+        _data_ = {
+            "oid": oid,
+            "cusid": self.cusid,
+            "itemid": self.itemid,
+            "itemname": self.itemname
+
+        }
+        with open(f"{__order_folder__}/{oid}.db", "w") as order_file:
+            json.dump(_data_, order_file)
+
+        # Save next id
+        self.last_id += 1
+        with open(__order_last_id__, "w") as f:
+            f.write(str(self.last_id))
+
+        def find(self, id):
+            Order.__get_order_by_path(self, f"{__order_folder__}/{id}.db")
+
+        def __get_order_by_path(order, path):
+            with open(path, "r") as order_file:
+                _data_ = json.load(order_file)
+                order.oid = _data_["oid"]
+                order.cusid = _data_["cusid"]
+                order.itemid = _data_["itemid"]
+                order.itemname = _data_["itemname"]
+
+        def all(self):
+            order_file_names = os.listdir(__order_folder__)
+            orders = []
+            for order_file_name in order_file_names:
+                order = Order()
+                Order.__get_order_by_path(
+                    order, f"{__order_folder__}/{order_file_names}")
+                orders.append(order)
+            return orders
+
+
+def order_create(cusid, itemid, itemname):
+    order = Order()
+    order.cusid = cusid
+    order.itemid = itemid
+    order.itemname = itemname
+    order.saveOrder()
+
+
+def order_all():
+    order = Order()
+    orders = order.all()
+    pprint(orders)
+
+
+def order_view(oid):
+    order = Order()
+    order.find(id)
+    print(order.oid, order.cusid, order.itemid, order.itemname)
+
 
 class Item:
     def __init__(self):
@@ -121,7 +199,7 @@ class Item:
     def save(self):
         id = self.last_id+1
 
-        # Save database item
+        # Save item in Database
         _data_ = {
             "id": id,
             "name": self.name,
@@ -161,11 +239,10 @@ class Item:
         items = self.all()
         result_items = []
         for item in items:
-            item_value = getattr(item,key)
+            item_value = getattr(item, key)
             if item_value == value:
                 result_items.append(item)
         return result_items
-
 
     def __repr__(self):
         return f"id:{self.id},name:{self.name},price:{self.price}"
@@ -187,14 +264,16 @@ def item_all():
     items = item.all()
     pprint(items)
 
+
 def item_view(id):
     item = Item()
     item.find(id)
     print(item.id, item.name, item.price, item.selling_price)
 
-def item_search(key,value):
+
+def item_search(key, value):
     item = Item()
-    results = item.search(key,value)
+    results = item.search(key, value)
     pprint(results)
 
 
@@ -221,7 +300,16 @@ if __name__ == "__main__":
             customer_all()
         elif command == "view":
             customer_view(*params)
-            
+
+    #  Order
+    elif section == "order":
+        if command == "create":
+            order_create(*params)
+        elif command == "all":
+            order_all()
+        elif command == "view":
+            order_view(*params)
+
     # Items
     elif section == "item":
         if command == "create":
@@ -232,6 +320,3 @@ if __name__ == "__main__":
             item_view(*params)
         elif command == "search":
             item_search(*params)
-
-
-       
