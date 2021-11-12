@@ -57,7 +57,31 @@ order create <Customer_ID> <Item_id> <Item_name>
 ### View
 
 ```cmd
-order place <id>
+order place <order_id>
+```
+
+### All
+
+```cmd
+order all
 ```
 
 ## Customer
+
+### Create
+
+```cmd
+customer create <name> <address> <contact>
+```
+
+### All
+
+```cmd
+customer all
+```
+
+### View
+
+```cmd
+customer view <cus_id>
+```
